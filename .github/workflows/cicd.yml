@@ -131,7 +131,7 @@ jobs:
             context: .
             file: ./Dockerfile
             push: true
-            tags: docker.io/${{ secrets.DOCKER_USERNAME }}/bankapp:latest
+            tags: docker.io/${{ vars.DOCKER_USERNAME }}/bankapp:latest
       
     
           
