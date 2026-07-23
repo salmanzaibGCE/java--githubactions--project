@@ -27,17 +27,7 @@ jobs:
       steps:
       - uses: actions/checkout@v7
 
-      - name: Set up JDK17
-        uses: actions/setup-java@v5
-        with:
-          java-version: "17"
-          distribution: 'temurin'
-          cache: maven
-        
-      # Step 1: Pre-download and populate the local ~/.m2 cache directory
-      - name: Resolve Maven Dependencies
-        run: mvn dependency:resolve
-
+      
       # Step 2: Run Trivy with the --offline flag so it uses the cache  
       - name: trivy innstallation
         run: |
