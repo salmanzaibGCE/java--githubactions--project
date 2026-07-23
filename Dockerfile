@@ -8,7 +8,7 @@ ENV APP_HOME=/usr/src/app
 WORKDIR $APP_HOME
 
 # 2. NOW copy the file into the active workspace folder
-COPY app/*.jar app.jar
+COPY ./app/*.jar app.jar
 
 # 3. Optional: Run 'ls' here if you want to see your jar file in the build logs
 RUN ls -la
