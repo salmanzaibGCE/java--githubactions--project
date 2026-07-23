@@ -107,7 +107,7 @@ jobs:
       steps:
         - uses: actions/checkout@v7
         - name: download build jar file
-          uses:  actions/download-artifact@v3.1.0
+          uses:  actions/download-artifact@v4
           with:
             name: app-jar
             path: app #it will save it in ./app folder
