@@ -15,7 +15,7 @@ provider "aws" {
 }
 
 # =========================================================================
-# 2. DATA SOURCES (Querying your existing default AWS network)
+# 2. DATA SOURCES & NETWORK SETTINGS
 # =========================================================================
 data "aws_vpc" "default" {
   default = true
@@ -26,10 +26,18 @@ data "aws_subnets" "default" {
     name   = "vpc-id"
     values = [data.aws_vpc.default.id]
   }
+  filter {
+    name   = "availability-zone"
+    values = ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d", "us-east-1f"]
+  }
+}
+
+data "aws_ssm_parameter" "eks_ami" {
+  name = "/aws/service/eks/optimized-ami/${var.cluster_version}/amazon-linux-2/recommended/image_id"
 }
 
 # =========================================================================
-# 3. SECURITY ACCESS (IAM Roles for the EKS Control Tower Brain)
+# 3. SECURITY ACCESS (IAM Roles for Control Plane)
 # =========================================================================
 resource "aws_iam_role" "eks_cluster_role" {
   name = "${var.project_name}-eks-cluster-role"
@@ -38,7 +46,7 @@ resource "aws_iam_role" "eks_cluster_role" {
     Version = "2012-10-17"
     Statement = [{
       Effect    = "Allow"
-      Principal = { Service = "://amazonaws.com" }
+      Principal = { Service = "eks.amazonaws.com" }
       Action    = "sts:AssumeRole"
     }]
   })
@@ -50,7 +58,7 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
 }
 
 # =========================================================================
-# 4. RESOURCE CREATION: The EKS Cluster (Control Tower)
+# 4. RESOURCE: EKS Cluster Brain
 # =========================================================================
 resource "aws_eks_cluster" "main" {
   name     = "${var.project_name}-eks-cluster"
@@ -65,7 +73,7 @@ resource "aws_eks_cluster" "main" {
 }
 
 # =========================================================================
-# 5. SECURITY ACCESS (IAM Roles for Worker Node Servers)
+# 5. SECURITY ACCESS (IAM Roles for Worker Servers)
 # =========================================================================
 resource "aws_iam_role" "eks_node_role" {
   name = "${var.project_name}-eks-node-role"
@@ -74,7 +82,7 @@ resource "aws_iam_role" "eks_node_role" {
     Version = "2012-10-17"
     Statement = [{
       Effect    = "Allow"
-      Principal = { Service = "://amazonaws.com" }
+      Principal = { Service = "ec2.amazonaws.com" }
       Action    = "sts:AssumeRole"
     }]
   })
@@ -96,7 +104,27 @@ resource "aws_iam_role_policy_attachment" "ec2_registry_policy" {
 }
 
 # =========================================================================
-# 6. RESOURCE CREATION: Worker Nodes (The actual servers running your apps)
+# 6. NETWORKING & KUBERNETES BOOTSTRAP USER DATA
+# =========================================================================
+resource "aws_launch_template" "eks_nodes" {
+  name_prefix   = "${var.project_name}-node-template"
+  image_id      = data.aws_ssm_parameter.eks_ami.value
+
+  network_interfaces {
+    associate_public_ip_address = true
+  }
+
+  # 🚀 THE FIX: This script tells the Linux server how to connect to your EKS brain!
+  user_data = base64encode(<<-EOF
+    #!/bin/bash
+    set -o xtrace
+    /etc/eks/bootstrap.sh ${aws_eks_cluster.main.name}
+  EOF
+  )
+}
+
+# =========================================================================
+# 7. RESOURCE: Worker Node Group
 # =========================================================================
 resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
@@ -105,10 +133,15 @@ resource "aws_eks_node_group" "main" {
   subnet_ids      = data.aws_subnets.default.ids
   instance_types  = [var.node_instance_type]
 
+  launch_template {
+    id      = aws_launch_template.eks_nodes.id
+    version = aws_launch_template.eks_nodes.latest_version
+  }
+
   scaling_config {
-    desired_size = 2  # Starts with 2 worker servers running
-    max_size     = 3  # Can scale up to 3 if busy
-    min_size     = 1  # Drops to 1 minimum to save money
+    desired_size = 3
+    max_size     = 4
+    min_size     = 2
   }
 
   depends_on = [
@@ -117,4 +150,3 @@ resource "aws_eks_node_group" "main" {
     aws_iam_role_policy_attachment.ec2_registry_policy,
   ]
 }
-
