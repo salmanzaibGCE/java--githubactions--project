@@ -135,7 +135,28 @@ jobs:
             file: ./Dockerfile
             push: true
             tags: docker.io/${{ vars.DOCKERHUB_USERNAME }}/bankapp:latest
+
+    deploy_to_kubernetes:
+       runs-on: self-hosted
+       needs: build_dockerimage_pushit
+
       
+       steps:
+        - uses: actions/checkout@v7
+        
+        - name: configure AWS credentials
+          uses: aws-actions/configure-aws-credentials@v4
+          with:
+             aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+             aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+             aws-region: us-east-1
+
+        #  native AWS CLI securely sync your local kubectl context configuration
+        - name: connect and update kubeconfig context
+          run: aws eks update-kubeconfig --name bankapp-eks-cluster --region us-east-1
+
+        - name: deploy to eks
+          run: kubectl apply -f ds.yml
     
           
         
