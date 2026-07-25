@@ -2,7 +2,7 @@ output "cluster_name" {
   description = "The name of your EKS Cluster"
   value       = aws_eks_cluster.main.name
 }
-# shows the cluster endpoint
+# shows the cluster endpoint and name
 output "cluster_endpoint" {
   description = "The connection endpoint for your EKS control plane"
   value       = aws_eks_cluster.main.endpoint
