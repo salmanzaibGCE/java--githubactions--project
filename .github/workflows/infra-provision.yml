@@ -8,7 +8,7 @@ on:
 
 jobs:
   provision-infra:
-    runs-on: self-hosted # Runs on your active app runner EC2
+    runs-on: self-hosted 
     
     steps:
     - name: Checkout Code
