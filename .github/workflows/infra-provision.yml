@@ -1,10 +1,10 @@
-name: AWS Infra Pipeline
+name: aws infr provisionng pipeline
 
 on:
   push:
     branches: [ "main" ]
     paths:
-      - 'eks-terraform/**'
+      - 'eks-terraform/**' #  IGNORES triggers if you only modify your infrastructure code
 
 jobs:
   provision-infra:
