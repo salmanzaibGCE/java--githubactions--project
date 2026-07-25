@@ -1,1 +1,33 @@
+name: AWS Infra Pipeline
 
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'eks-terraform/**'
+
+jobs:
+  provision-infra:
+    runs-on: self-hosted # Runs on your active app runner EC2
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v7
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v6
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1 
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v4
+      with:
+        terraform_version: "1.15.8"
+
+    - name: Terraform Init
+      run: terraform -chdir=eks-terraform init
+
+    - name: Terraform Apply
+      run: terraform -chdir=eks-terraform apply -auto-approve
