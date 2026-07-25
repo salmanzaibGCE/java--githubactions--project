@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main" ]
     paths-ignore:
-      - 'terraform/**' #  IGNORES triggers if you only modify your infrastructure code
+      - 'eks-terraform/**' #  IGNORES triggers if you only modify your infrastructure code
 
 
 jobs:
