@@ -1,4 +1,4 @@
-name: aws infr provisionng pipeline
+name: aws infr provisioning pipeline
 
 on:
   push:
@@ -26,4 +26,4 @@ jobs:
       run: terraform -chdir=eks-terraform init
 
     - name: Terraform Apply
-      run: terraform -chdir=eks-terraform apply -auto-approve
+      run: terraform -chdir=eks-terraform destroy -auto-approve
